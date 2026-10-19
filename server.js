@@ -5,7 +5,7 @@ const path = require('node:path');
 const port = Number(process.env.PORT || 8000);
 const root = __dirname;
 const mimeTypes = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
-const state = { active: false, severity: 'WAITING', room: '--', symptoms: 'No alert received', receivedAt: '--', response: 'PENDING', history: [] };
+const state = { adminId: 'admin', adminPassword: 'admin123', active: false, severity: 'WAITING', room: '--', symptoms: 'No alert received', receivedAt: '--', response: 'PENDING', history: [] };
 let lastAlertKey = '';
 let lastAlertAt = 0;
 
@@ -44,8 +44,26 @@ const server = http.createServer(async (request, response) => {
     response.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' });
     return response.end();
   }
+  if (request.method === 'POST' && requestPath === '/api/login') {
+    try {
+      const payload = await readBody(request);
+      const valid = payload.adminId === state.adminId && payload.password === state.adminPassword;
+      return json(response, valid ? 200 : 401, valid ? { ok: true } : { ok: false, error: 'Invalid admin ID or password.' });
+    } catch (error) { return json(response, 400, { error: error.message }); }
+  }
+  if (request.method === 'POST' && requestPath === '/api/password/change') {
+    try {
+      const payload = await readBody(request);
+      const valid = payload.adminId === state.adminId && payload.currentPassword === state.adminPassword;
+      if (!valid) return json(response, 401, { ok: false, error: 'Admin ID or current password is incorrect.' });
+      state.adminPassword = String(payload.newPassword);
+      return json(response, 200, { ok: true });
+    } catch (error) { return json(response, 400, { error: error.message }); }
+  }
   if (request.method === 'GET' && requestPath === '/health') return json(response, 200, { ok: true });
-  if (request.method === 'GET' && requestPath === '/api/status') return json(response, 200, state);
+  if (request.method === 'GET' && requestPath === '/api/status') {
+    return json(response, 200, { active: state.active, severity: state.severity, room: state.room, symptoms: state.symptoms, receivedAt: state.receivedAt, response: state.response, history: state.history });
+  }
 
   try {
     if (request.method === 'POST' && requestPath === '/api/alert') {

@@ -102,11 +102,11 @@ void loop() {
   
  if (mildPressed == HIGH) {
     Serial.println("Mild symptoms button pressed");
-      sendAlert("MILD", "Headache, nausea, mild pain");
+      sendAlert("Trauma Emergencies", "Headache, nausea, mild pain");
  }
  else if (heavyPressed == HIGH) {
     Serial.println("Heavy symptoms button pressed");
-      sendAlert("HEAVY", "Chest pain, shortness of breath, severe pain");
+      sendAlert("Medical Emergencies", "Chest pain, shortness of breath, severe pain");
  }
   
 

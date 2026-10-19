@@ -3,6 +3,8 @@ $tcp = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Any, 80
 $tcp.Start()
 
 $state = [ordered]@{
+  adminId = 'admin'
+  adminPassword = 'admin123'
   active = $false
   severity = 'WAITING'
   room = '--'
@@ -55,8 +57,28 @@ while ($true) {
       if ($headerLine -match '^Content-Length:\s*(\d+)') { $contentLength = [int]$matches[1] }
     }
 
-    if ($method -eq 'GET' -and $path -eq '/api/status') {
-      Send-Http $stream '200 OK' 'application/json; charset=utf-8' ($state | ConvertTo-Json -Compress)
+    if ($method -eq 'POST' -and $path -eq '/api/login') {
+      $body = if ($contentLength -gt 0) { $buffer = New-Object char[] $contentLength; [void]$reader.Read($buffer, 0, $contentLength); -join $buffer } else { '{}' }
+      $payload = $body | ConvertFrom-Json
+      $valid = [string]$payload.adminId -eq $state.adminId -and [string]$payload.password -eq $state.adminPassword
+      if ($valid) { Send-Http $stream '200 OK' 'application/json; charset=utf-8' '{"ok":true}' } else { Send-Http $stream '401 Unauthorized' 'application/json; charset=utf-8' '{"ok":false,"error":"Invalid admin ID or password."}' }
+    } elseif ($method -eq 'POST' -and $path -eq '/api/password/change') {
+      $body = if ($contentLength -gt 0) { $buffer = New-Object char[] $contentLength; [void]$reader.Read($buffer, 0, $contentLength); -join $buffer } else { '{}' }
+      $payload = $body | ConvertFrom-Json
+      $valid = [string]$payload.adminId -eq $state.adminId -and [string]$payload.currentPassword -eq $state.adminPassword
+      if (!$valid) { Send-Http $stream '401 Unauthorized' 'application/json; charset=utf-8' '{"ok":false,"error":"Admin ID or current password is incorrect."}' }
+      else { $state.adminPassword = [string]$payload.newPassword; Write-Host 'Admin password changed'; Send-Http $stream '200 OK' 'application/json; charset=utf-8' '{"ok":true}' }
+    } elseif ($method -eq 'GET' -and $path -eq '/api/status') {
+      $publicState = [ordered]@{
+        active = $state.active
+        severity = $state.severity
+        room = $state.room
+        symptoms = $state.symptoms
+        receivedAt = $state.receivedAt
+        response = $state.response
+        history = $state.history
+      }
+      Send-Http $stream '200 OK' 'application/json; charset=utf-8' ($publicState | ConvertTo-Json -Compress)
     } elseif ($method -eq 'POST' -and $path -eq '/api/alert') {
       $body = if ($contentLength -gt 0) { $buffer = New-Object char[] $contentLength; [void]$reader.Read($buffer, 0, $contentLength); -join $buffer } else { '{}' }
       $payload = $body | ConvertFrom-Json

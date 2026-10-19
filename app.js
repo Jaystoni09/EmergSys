@@ -1,6 +1,5 @@
 const state = { emergencyActive: false, lastAlertKey: '', history: [] };
 const ADMIN_ID = 'admin';
-const DEFAULT_ADMIN_PASSWORD = 'admin123';
 const loginScreen = document.getElementById('loginScreen');
 const dashboard = document.getElementById('dashboard');
 const loginForm = document.getElementById('loginForm');
@@ -9,10 +8,6 @@ const loginButton = loginForm.querySelector('button[type="submit"]');
 const passwordDialog = document.getElementById('passwordDialog');
 const passwordForm = document.getElementById('passwordForm');
 const passwordError = document.getElementById('passwordError');
-
-function getAdminPassword() {
-  return localStorage.getItem('emergencyAdminPassword') || DEFAULT_ADMIN_PASSWORD;
-}
 
 const statusPanel = document.getElementById('statusPanel');
 const statusLabel = document.getElementById('statusLabel');
@@ -205,18 +200,20 @@ async function pollReceiver() {
   }
 }
 
-loginForm.addEventListener('submit', (event) => {
+loginForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   unlockAlertAudio();
   const formData = new FormData(loginForm);
-  if (formData.get('adminId') === ADMIN_ID && formData.get('adminPassword') === getAdminPassword()) {
+  try {
+    const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: formData.get('adminId'), password: formData.get('adminPassword') }) });
+    if (!response.ok) throw new Error('Invalid admin ID or password.');
     sessionStorage.setItem('emergencyAdminAuthenticated', 'true');
     loginError.textContent = '';
     loginButton.disabled = true;
     loginButton.textContent = 'SIGNING IN...';
     window.setTimeout(startDashboard, 700);
-  } else {
-    loginError.textContent = 'Invalid admin ID or password.';
+  } catch (error) {
+    loginError.textContent = error.message;
   }
 });
 
@@ -226,20 +223,24 @@ document.getElementById('openPasswordChange').addEventListener('click', () => {
   passwordDialog.hidden = false;
 });
 document.getElementById('cancelPassword').addEventListener('click', () => { passwordDialog.hidden = true; });
-passwordForm.addEventListener('submit', (event) => {
+passwordForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const passwordAdminId = document.getElementById('passwordAdminId').value;
   const currentPassword = document.getElementById('currentPassword').value;
   const newPassword = document.getElementById('newPassword').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
-  if (passwordAdminId !== ADMIN_ID) { passwordError.textContent = 'Admin ID was not found.'; return; }
-  if (currentPassword !== getAdminPassword()) { passwordError.textContent = 'Current password is incorrect.'; return; }
   if (newPassword.length < 6) { passwordError.textContent = 'New password must be at least 6 characters.'; return; }
   if (newPassword !== confirmPassword) { passwordError.textContent = 'New passwords do not match.'; return; }
-  localStorage.setItem('emergencyAdminPassword', newPassword);
-  passwordDialog.hidden = true;
-  loginError.textContent = 'Password changed successfully.';
-  loginError.style.color = 'var(--lime)';
+  try {
+    const response = await fetch('/api/password/change', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: passwordAdminId, currentPassword, newPassword }) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Unable to change password.');
+    passwordDialog.hidden = true;
+    loginError.textContent = 'Password changed successfully for all devices.';
+    loginError.style.color = 'var(--lime)';
+  } catch (error) {
+    passwordError.textContent = error.message;
+  }
 });
 
 document.addEventListener('pointerdown', unlockAlertAudio, { once: true });
