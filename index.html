@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#081116" />
+    <title>Emergency Alert Receiver</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <section class="login-screen" id="loginScreen">
+      <div class="login-card">
+        <p class="dialog-kicker">RESTRICTED RECEIVER</p>
+        <h1>Admin sign in</h1>
+        <p>Sign in to access the emergency alert dashboard.</p>
+        <form id="loginForm">
+          <label for="adminId">ADMIN ID</label>
+          <input id="adminId" name="adminId" autocomplete="username" required>
+          <label for="adminPassword">PASSWORD</label>
+          <input id="adminPassword" name="adminPassword" type="password" autocomplete="current-password" required>
+          <button class="login-button" type="submit">ENTER DASHBOARD</button>
+          <button class="change-password-link" id="openPasswordChange" type="button">CHANGE PASSWORD</button>
+          <p class="login-error" id="loginError" role="alert"></p>
+        </form>
+      </div>
+    </section>
+    <div class="simple-alert-app" id="dashboard" hidden>
+      <header class="alert-header"><span class="alert-title"><i class="alert-logo" aria-hidden="true">!</i><span>EMERGENCY ALERT</span></span><button class="sign-out-button" id="signOut" type="button">SIGN OUT</button></header>
+      <main class="alert-card" id="statusPanel">
+        <div class="receiver-state"><span class="receiver-dot"></span><span id="statusLabel">LISTENING</span></div>
+        <div class="alert-details">
+          <div class="detail-block"><span>ROOM NUMBER</span><strong id="roomNumber">--</strong></div>
+          <div class="detail-block"><span>SEVERITY</span><strong id="severity">WAITING</strong></div>
+          <div class="detail-block symptoms"><span>SYMPTOMS</span><strong id="symptoms">No alert received</strong></div>
+        </div>
+        <p class="alert-message" id="statusDescription">Ready for an ESP32 alert.</p>
+        <div class="receiver-meta"><span>SENDER: ESP32-01</span><span>LAST RECEIVED: <strong id="receivedAt">--</strong></span></div>
+        <div class="indicator-row" aria-label="Alert response indicators"><span><i class="indicator-light green" id="greenIndicator"></i> CONFIRMED</span><span><i class="indicator-light red" id="redIndicator"></i> DENIED</span></div>
+      </main>
+      <section class="history-panel" aria-labelledby="historyTitle">
+        <div class="history-heading"><div><p class="history-kicker">RECEIVER LOG</p><h2 id="historyTitle">Alert history</h2></div><div class="history-tools"><span id="historyCount">0 alerts</span><button class="history-button" id="saveHistory" type="button">SAVE CSV</button><button class="history-button danger" id="clearHistory" type="button">CLEAR HISTORY</button></div></div>
+        <div class="history-list" id="historyList"><p class="history-empty">No alerts received yet.</p></div>
+      </section>
+    </div>
+    <div class="dialog-backdrop" id="passwordDialog" hidden>
+      <section class="alert-dialog password-dialog" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
+        <p class="dialog-kicker">ADMIN ACCOUNT</p>
+        <h2 id="passwordTitle">Change password</h2>
+        <form id="passwordForm">
+          <label for="currentPassword">CURRENT PASSWORD</label>
+          <input id="currentPassword" type="password" required>
+          <label for="newPassword">NEW PASSWORD</label>
+          <input id="newPassword" type="password" minlength="6" required>
+          <label for="confirmPassword">CONFIRM NEW PASSWORD</label>
+          <input id="confirmPassword" type="password" minlength="6" required>
+          <p class="password-error" id="passwordError" role="alert"></p>
+          <div class="dialog-actions"><button class="dialog-button deny" id="cancelPassword" type="button">CANCEL</button><button class="dialog-button confirm" type="submit">SAVE PASSWORD</button></div>
+        </form>
+      </section>
+    </div>
+    <div class="dialog-backdrop" id="alertDialog" hidden>
+      <section class="alert-dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+        <p class="dialog-kicker">INCOMING ESP32 ALERT</p>
+        <h2 id="dialogTitle">Alert received</h2>
+        <div class="dialog-summary"><span>ROOM <strong id="dialogRoom">--</strong></span><span>SEVERITY <strong id="dialogSeverity">--</strong></span></div>
+        <p class="dialog-symptoms" id="dialogSymptoms">--</p>
+        <p class="dialog-question">Do you confirm this alert?</p>
+        <div class="dialog-actions"><button class="dialog-button deny" id="denyAlert" type="button">DENY ALERT</button><button class="dialog-button confirm" id="confirmAlert" type="button">CONFIRM ALERT</button></div>
+      </section>
+    </div>
+    <div class="dialog-backdrop" id="deleteDialog" hidden>
+      <section class="alert-dialog confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+        <p class="dialog-kicker">DELETE HISTORY</p>
+        <h2 id="deleteTitle">Delete all alert history?</h2>
+        <p class="dialog-symptoms">This removes every saved alert from the receiver log.</p>
+        <div class="dialog-actions"><button class="dialog-button deny" id="cancelDelete" type="button">NO, KEEP</button><button class="dialog-button confirm" id="confirmDelete" type="button">YES, DELETE</button></div>
+      </section>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
