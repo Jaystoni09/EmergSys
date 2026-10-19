@@ -228,9 +228,11 @@ document.getElementById('openPasswordChange').addEventListener('click', () => {
 document.getElementById('cancelPassword').addEventListener('click', () => { passwordDialog.hidden = true; });
 passwordForm.addEventListener('submit', (event) => {
   event.preventDefault();
+  const passwordAdminId = document.getElementById('passwordAdminId').value;
   const currentPassword = document.getElementById('currentPassword').value;
   const newPassword = document.getElementById('newPassword').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
+  if (passwordAdminId !== ADMIN_ID) { passwordError.textContent = 'Admin ID was not found.'; return; }
   if (currentPassword !== getAdminPassword()) { passwordError.textContent = 'Current password is incorrect.'; return; }
   if (newPassword.length < 6) { passwordError.textContent = 'New password must be at least 6 characters.'; return; }
   if (newPassword !== confirmPassword) { passwordError.textContent = 'New passwords do not match.'; return; }

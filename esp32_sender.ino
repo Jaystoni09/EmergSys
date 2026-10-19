@@ -1,9 +1,10 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 
 const char* wifiSsid = "Binsoi_Home";
 const char* wifiPassword = "VinceAdrien17!";
-const char* receiverUrl = "http://127.0.0.1:8000/api/alert";
+const char* receiverUrl = "https://emergsystem-render-com.onrender.com/api/alert";
 
 const char* roomNumber = "204";
 const int mildButtonPin = 18;
@@ -48,7 +49,8 @@ void sendAlert(const char* severity, const char* symptoms) {
     return;
   }
 
-  WiFiClient client;
+  WiFiClientSecure client;
+  client.setInsecure();
   HTTPClient http;
   http.setTimeout(5000);
   if (!http.begin(client, receiverUrl)) {
