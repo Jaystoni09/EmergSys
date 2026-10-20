@@ -4,7 +4,7 @@
 
 const char* wifiSsid = "Binsoi_Home";
 const char* wifiPassword = "VinceAdrien17!";
-const char* statusUrl = "https://emergsystem-render-com.onrender.com/api/status";
+const char* statusUrl = "https://emergsystem.onrender.com/api/status";
 
 const int greenLedPin = 25;
 const int redLedPin = 26;
@@ -58,7 +58,7 @@ void pollAlertStatus() {
   WiFiClientSecure client;
   client.setInsecure();
   HTTPClient http;
-  http.setTimeout(3000);
+  http.setTimeout(10000);
 
   if (!http.begin(client, statusUrl)) {
     Serial.println("Unable to open receiver status URL");
