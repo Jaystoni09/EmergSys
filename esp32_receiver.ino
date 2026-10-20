@@ -1,9 +1,10 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 
-const char* wifiSsid = "YOUR_WIFI_NAME";
-const char* wifiPassword = "YOUR_WIFI_PASSWORD";
-const char* statusUrl = "http://192.168.1.8:8000/api/status";
+const char* wifiSsid = "Binsoi_Home";
+const char* wifiPassword = "VinceAdrien17!";
+const char* statusUrl = "https://emergsystem-render-com.onrender.com/api/status";
 
 const int greenLedPin = 25;
 const int redLedPin = 26;
@@ -35,7 +36,11 @@ void connectToWiFi() {
 void setOutputs(bool greenOn, bool redOn, bool buzzerOn) {
   digitalWrite(greenLedPin, greenOn ? HIGH : LOW);
   digitalWrite(redLedPin, redOn ? HIGH : LOW);
-  digitalWrite(buzzerPin, buzzerOn ? HIGH : LOW);
+  if (buzzerOn) {
+    tone(buzzerPin, 2200);
+  } else {
+    noTone(buzzerPin);
+  }
 }
 
 void stopAlert() {
@@ -50,7 +55,8 @@ void pollAlertStatus() {
     return;
   }
 
-  WiFiClient client;
+  WiFiClientSecure client;
+  client.setInsecure();
   HTTPClient http;
   http.setTimeout(3000);
 
