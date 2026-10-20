@@ -2,9 +2,9 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 
-const char* wifiSsid = "YOUR_WIFI_SSID";
-const char* wifiPassword = "YOUR_WIFI_PASSWORD";
-const char* receiverUrl = "https://YOUR-RENDER-SERVICE.onrender.com/api/alert";
+const char* wifiSsid = "Binsoi_Home";
+const char* wifiPassword = "VinceAdrien17!";
+const char* receiverUrl = "https://emergsystem.onrender.com/api/alert";
 
 const char* roomNumber = "204";
 const int mildButtonPin = 18;
@@ -113,10 +113,10 @@ void loop() {
     if (mildPressed && heavyPressed) {
       Serial.println("INPUT ERROR: both buttons are pressed");
     } else if (heavyPressed) {
-      Serial.println("Trauma button pressed");
+      Serial.println("Heavy symptoms button pressed");
       sendAlert("Trauma Emergencies", "Chest pain, shortness of breath, severe pain");
     } else {
-      Serial.println("Medical button pressed");
+      Serial.println("Mild symptoms button pressed");
       sendAlert("Medical Emergencies", "Headache, nausea, mild pain");
     }
   }
