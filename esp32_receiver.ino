@@ -1,10 +1,9 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <WiFiClientSecure.h>
 
 const char* wifiSsid = "Binsoi_Home";
 const char* wifiPassword = "VinceAdrien17!";
-const char* statusUrl = "https://emergsystem.onrender.com/api/status";
+const char* statusUrl = "http://192.168.1.8:8000/api/status";
 
 const int greenLedPin = 25;
 const int redLedPin = 26;
@@ -49,14 +48,22 @@ void stopAlert() {
   setOutputs(false, false, false);
 }
 
+String readJsonString(const String& json, const String& key) {
+  int keyStart = json.indexOf(key);
+  if (keyStart < 0) return "";
+  int valueStart = keyStart + key.length();
+  int valueEnd = json.indexOf('"', valueStart);
+  if (valueEnd < 0) return "";
+  return json.substring(valueStart, valueEnd);
+}
+
 void pollAlertStatus() {
   if (WiFi.status() != WL_CONNECTED) {
     connectToWiFi();
     return;
   }
 
-  WiFiClientSecure client;
-  client.setInsecure();
+  WiFiClient client;
   HTTPClient http;
   http.setTimeout(10000);
 
@@ -70,10 +77,9 @@ void pollAlertStatus() {
     String responseBody = http.getString();
     bool alertActive = responseBody.indexOf("\"active\":true") >= 0;
     bool responsePending = responseBody.indexOf("\"response\":\"PENDING\"") >= 0;
-    bool traumaAlert = responseBody.indexOf("\"severity\":\"TRAUMA\"") >= 0 ||
-                       responseBody.indexOf("\"severity\":\"HEAVY\"") >= 0;
-    bool medicalAlert = responseBody.indexOf("\"severity\":\"MEDICAL\"") >= 0 ||
-                        responseBody.indexOf("\"severity\":\"MILD\"") >= 0;
+    String currentSeverity = readJsonString(responseBody, "\"severity\":\"");
+    bool traumaAlert = currentSeverity == "TRAUMA" || currentSeverity == "HEAVY" || currentSeverity == "Trauma Emergencies";
+    bool medicalAlert = currentSeverity == "MEDICAL" || currentSeverity == "MILD" || currentSeverity == "Medical Emergencies";
 
     if (!alertActive || !responsePending) {
       if (activeAlert.length() > 0) {

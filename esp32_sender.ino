@@ -1,10 +1,9 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <WiFiClientSecure.h>
 
 const char* wifiSsid = "Binsoi_Home";
 const char* wifiPassword = "VinceAdrien17!";
-const char* receiverUrl = "https://emergsystem-render-com.onrender.com/api/alert";
+const char* receiverUrl = "http://192.168.1.8:8000/api/alert";
 
 const char* roomNumber = "204";
 const int mildButtonPin = 18;
@@ -49,8 +48,7 @@ void sendAlert(const char* severity, const char* symptoms) {
     return;
   }
 
-  WiFiClientSecure client;
-  client.setInsecure();
+  WiFiClient client;
   HTTPClient http;
   http.setTimeout(5000);
   if (!http.begin(client, receiverUrl)) {
@@ -97,18 +95,29 @@ void setup() {
 }
 
 void loop() {
-    int mildPressed = digitalRead(mildButtonPin);
-    int heavyPressed = digitalRead(heavyButtonPin);
-  
- if (mildPressed == HIGH) {
-    Serial.println("Mild symptoms button pressed");
-      sendAlert("Trauma Emergencies", "Headache, nausea, mild pain");
- }
- else if (heavyPressed == HIGH) {
-    Serial.println("Heavy symptoms button pressed");
-      sendAlert("Medical Emergencies", "Chest pain, shortness of breath, severe pain");
- }
-  
+  bool mildPressed = digitalRead(mildButtonPin) == LOW;
+  bool heavyPressed = digitalRead(heavyButtonPin) == LOW;
+  bool anyButtonPressed = mildPressed || heavyPressed;
+  unsigned long now = millis();
+
+  if (!anyButtonPressed) {
+    buttonsReady = true;
+  }
+
+  if (buttonsReady && anyButtonPressed && now - lastButtonEvent > debounceDelay) {
+    buttonsReady = false;
+    lastButtonEvent = now;
+
+    if (mildPressed && heavyPressed) {
+      Serial.println("INPUT ERROR: both buttons are pressed");
+    } else if (heavyPressed) {
+      Serial.println("Trauma button pressed");
+      sendAlert("Trauma Emergencies", "Chest pain, shortness of breath, severe pain");
+    } else {
+      Serial.println("Medical button pressed");
+      sendAlert("Medical Emergencies", "Headache, nausea, mild pain");
+    }
+  }
 
   delay(20);
 }
