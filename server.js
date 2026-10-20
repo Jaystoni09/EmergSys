@@ -23,7 +23,18 @@ function readBody(request) {
     let body = '';
     request.setEncoding('utf8');
     request.on('data', (chunk) => { body += chunk; });
-    request.on('end', () => resolve(body ? JSON.parse(body) : {}));
+    request.on('end', () => {
+      if (!body) return resolve({});
+      try {
+        const payload = JSON.parse(body);
+        if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+          return reject(new Error('Request body must be a JSON object'));
+        }
+        resolve(payload);
+      } catch (error) {
+        reject(new Error(`Invalid JSON request body: ${error.message}`));
+      }
+    });
     request.on('error', reject);
   });
 }

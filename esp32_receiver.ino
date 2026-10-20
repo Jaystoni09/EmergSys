@@ -1,9 +1,10 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 
-const char* wifiSsid = "Binsoi_Home";
-const char* wifiPassword = "VinceAdrien17!";
-const char* statusUrl = "http://192.168.1.8:8000/api/status";
+const char* wifiSsid = "YOUR_WIFI_SSID";
+const char* wifiPassword = "YOUR_WIFI_PASSWORD";
+const char* statusUrl = "https://YOUR-RENDER-SERVICE.onrender.com/api/status";
 
 const int greenLedPin = 25;
 const int redLedPin = 26;
@@ -63,7 +64,8 @@ void pollAlertStatus() {
     return;
   }
 
-  WiFiClient client;
+  WiFiClientSecure client;
+  client.setInsecure();
   HTTPClient http;
   http.setTimeout(10000);
 
