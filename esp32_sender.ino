@@ -98,34 +98,25 @@ void setup() {
 }
 
 void loop() {
-  bool mildPressed = digitalRead(mildButtonPin) == LOW;
-  bool heavyPressed = digitalRead(heavyButtonPin) == LOW;
-
-  if (!mildPressed && !heavyPressed) {
-    buttonsReady = true;
-  }
-
-  if (buttonsReady && millis() - lastButtonEvent >= debounceDelay) {
-    if (mildPressed && !previousMildPressed) {
-      Serial.println("Mild symptoms button pressed");
+    int mildPressed = digitalRead(mildButtonPin);
+    int heavyPressed = digitalRead(heavyButtonPin);
+  
+ if (mildPressed == HIGH) {
+    Serial.println("Mild symptoms button pressed");
+        
       sendAlert("Trauma Emergencies", "Headache, nausea, mild pain and etc.");
-      digitalWrite(blueLed, HIGH);
+      digitalWrite(blueLed, HIGH);   // Turn the LED on (HIGH voltage level)
       delay(1000);
-      digitalWrite(blueLed, LOW);
-      lastButtonEvent = millis();
-      buttonsReady = false;
-    } else if (heavyPressed && !previousHeavyPressed) {
-      Serial.println("Heavy symptoms button pressed");
+      digitalWrite(blueLed, LOW);   // Turn the LED on (HIGH voltage level)
+   
+ }
+ else if (heavyPressed == HIGH) {
+    Serial.println("Heavy symptoms button pressed");
       sendAlert("Medical Emergencies", "Chest pain, shortness of breath, severe pain and etc.");
-      digitalWrite(blueLed, HIGH);
+      digitalWrite(blueLed, HIGH);   // Turn the LED on (HIGH voltage level)
       delay(1000);
       digitalWrite(blueLed, LOW);
-      lastButtonEvent = millis();
-      buttonsReady = false;
-    }
  }
 
-  previousMildPressed = mildPressed;
-  previousHeavyPressed = heavyPressed;
   delay(20);
 }
