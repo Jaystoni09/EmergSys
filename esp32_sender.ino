@@ -2,11 +2,11 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 
-const char* wifiSsid = "Binsoi_Home";
-const char* wifiPassword = "VinceAdrien17!";
+const char* wifiSsid = "kylla";
+const char* wifiPassword = "kylla123";
 const char* receiverUrl = "https://emergsystem.onrender.com/api/alert";
-
-const char* roomNumber = "204";
+const int blueLed = 23;
+const char* roomNumber = "1";
 const int mildButtonPin = 18;
 const int heavyButtonPin = 19;
 const unsigned long debounceDelay = 250;
@@ -84,6 +84,7 @@ void setup() {
   Serial.begin(115200);
   pinMode(mildButtonPin, INPUT_PULLUP);
   pinMode(heavyButtonPin, INPUT_PULLUP);
+  pinMode(blueLed, OUTPUT);
   previousMildPressed = digitalRead(mildButtonPin) == LOW;
   previousHeavyPressed = digitalRead(heavyButtonPin) == LOW;
   buttonsReady = !previousMildPressed && !previousHeavyPressed;
@@ -99,27 +100,32 @@ void setup() {
 void loop() {
   bool mildPressed = digitalRead(mildButtonPin) == LOW;
   bool heavyPressed = digitalRead(heavyButtonPin) == LOW;
-  bool anyButtonPressed = mildPressed || heavyPressed;
-  unsigned long now = millis();
 
-  if (!anyButtonPressed) {
+  if (!mildPressed && !heavyPressed) {
     buttonsReady = true;
   }
 
-  if (buttonsReady && anyButtonPressed && now - lastButtonEvent > debounceDelay) {
-    buttonsReady = false;
-    lastButtonEvent = now;
-
-    if (mildPressed && heavyPressed) {
-      Serial.println("INPUT ERROR: both buttons are pressed");
-    } else if (heavyPressed) {
-      Serial.println("Heavy symptoms button pressed");
-      sendAlert("Trauma Emergencies", "Chest pain, shortness of breath, severe pain");
-    } else {
+  if (buttonsReady && millis() - lastButtonEvent >= debounceDelay) {
+    if (mildPressed && !previousMildPressed) {
       Serial.println("Mild symptoms button pressed");
-      sendAlert("Medical Emergencies", "Headache, nausea, mild pain");
+      sendAlert("Trauma Emergencies", "Headache, nausea, mild pain and etc.");
+      digitalWrite(blueLed, HIGH);
+      delay(1000);
+      digitalWrite(blueLed, LOW);
+      lastButtonEvent = millis();
+      buttonsReady = false;
+    } else if (heavyPressed && !previousHeavyPressed) {
+      Serial.println("Heavy symptoms button pressed");
+      sendAlert("Medical Emergencies", "Chest pain, shortness of breath, severe pain and etc.");
+      digitalWrite(blueLed, HIGH);
+      delay(1000);
+      digitalWrite(blueLed, LOW);
+      lastButtonEvent = millis();
+      buttonsReady = false;
     }
-  }
+ }
 
+  previousMildPressed = mildPressed;
+  previousHeavyPressed = heavyPressed;
   delay(20);
 }

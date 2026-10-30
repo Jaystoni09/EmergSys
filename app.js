@@ -59,6 +59,20 @@ function showToast(message) {
   showToast.timeout = window.setTimeout(() => toast.classList.remove('show'), 3200);
 }
 
+function formatReceivedAt(value) {
+  if (!value) return '--';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString([], {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+
 function renderHistory(history) {
   state.history = history;
   historyCount.textContent = `${history.length} alert${history.length === 1 ? '' : 's'}`;
@@ -71,7 +85,7 @@ function renderHistory(history) {
     <article class="history-entry ${['HEAVY', 'MEDICAL', 'MEDICAL EMERGENCIES'].includes(String(entry.severity).toUpperCase()) ? 'medical-entry' : ''}">
       <span class="history-severity">${entry.severity}</span>
       <div class="history-copy"><strong>Room ${entry.room}</strong><span>${entry.symptoms}</span></div>
-      <div class="history-meta"><time>${entry.receivedAt}</time><span class="history-response ${entry.response === 'CONFIRMED' ? 'confirmed' : entry.response === 'DENIED' ? 'denied' : ''}">${entry.response || 'PENDING'}</span></div>
+      <div class="history-meta"><time>${formatReceivedAt(entry.receivedAt)}</time><span class="history-response ${entry.response === 'CONFIRMED' ? 'confirmed' : entry.response === 'DENIED' ? 'denied' : ''}">${entry.response || 'PENDING'}</span></div>
     </article>
   `).join('');
 }
@@ -91,7 +105,7 @@ function receiveAlert(alert) {
   severity.textContent = alertSeverity;
   symptoms.textContent = alertSymptoms;
   statusDescription.textContent = `Respond to Room ${alertRoom}.`;
-  receivedAt.textContent = alert.receivedAt || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  receivedAt.textContent = formatReceivedAt(alert.receivedAt);
   renderHistory(alert.history || []);
 
   if (alert.response === 'CONFIRMED' || alert.response === 'DENIED') {
@@ -169,7 +183,7 @@ function saveHistoryCsv() {
   showToast('Alert history saved as CSV.');
 }
 
-function clearAlert() {
+function resetAlertDisplay() {
   state.emergencyActive = false;
   state.lastAlertKey = '';
   statusPanel.classList.remove('active');
@@ -180,6 +194,17 @@ function clearAlert() {
   statusDescription.textContent = 'Ready for an ESP32 alert.';
   receivedAt.textContent = '--';
   alertDialog.hidden = true;
+}
+
+async function clearAlert() {
+  try {
+    const response = await fetch('/api/alert/clear', { method: 'POST' });
+    if (!response.ok) throw new Error('Alert could not be cleared');
+    resetAlertDisplay();
+    showToast('Current alert cleared.');
+  } catch (error) {
+    showToast('Unable to clear the current alert.');
+  }
 }
 
 function startDashboard() {
@@ -251,6 +276,7 @@ document.getElementById('clearHistory').addEventListener('click', clearHistory);
 document.getElementById('cancelDelete').addEventListener('click', () => { deleteDialog.hidden = true; });
 document.getElementById('confirmDelete').addEventListener('click', confirmClearHistory);
 document.getElementById('saveHistory').addEventListener('click', saveHistoryCsv);
+document.getElementById('clearAlert').addEventListener('click', clearAlert);
 document.getElementById('signOut').addEventListener('click', () => {
   sessionStorage.removeItem('emergencyAdminAuthenticated');
   window.location.reload();

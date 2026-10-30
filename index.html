@@ -36,6 +36,7 @@
         <p class="alert-message" id="statusDescription">Ready for an ESP32 alert.</p>
         <div class="receiver-meta"><span>SENDER: ESP32-01</span><span>LAST RECEIVED: <strong id="receivedAt">--</strong></span></div>
         <div class="indicator-row" aria-label="Alert response indicators"><span><i class="indicator-light green" id="greenIndicator"></i> CONFIRMED</span><span><i class="indicator-light red" id="redIndicator"></i> DENIED</span></div>
+        <button class="alert-clear-button" id="clearAlert" type="button">CLEAR ALERT</button>
       </main>
       <section class="history-panel" aria-labelledby="historyTitle">
         <div class="history-heading"><div><p class="history-kicker">RECEIVER LOG</p><h2 id="historyTitle">Alert history</h2></div><div class="history-tools"><span id="historyCount">0 alerts</span><button class="history-button" id="saveHistory" type="button">SAVE CSV</button><button class="history-button danger" id="clearHistory" type="button">CLEAR HISTORY</button></div></div>

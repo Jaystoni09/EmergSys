@@ -15,6 +15,7 @@ Start the receiver server with `powershell -ExecutionPolicy Bypass -File .\recei
 5. Set `wifiSsid`, `wifiPassword`, and `receiverUrl` in `esp32_sender.ino` to your own values. Use the Render HTTPS URL plus `/api/alert`.
 6. Set the same Wi-Fi values and the Render HTTPS `/api/status` URL in `esp32_receiver.ino`.
 7. Open the Render URL in both receiver browsers.
+8. Re-upload the corrected `esp32_sender.ino` after wiring or firmware changes; the sender must use the press-edge logic to avoid repeated POST requests.
 
 The Node server listens on Render's `PORT` environment variable and exposes `/health`, `/api/alert`, `/api/status`, `/api/response`, and `/api/history/clear`. The current browser admin password is client-side demo authentication; use server-side authentication before treating the public deployment as production-secure.
 
@@ -31,7 +32,7 @@ For browser-only testing, call `window.receiveAlert({ severity: 'HEAVY', room: '
 Open `esp32_sender.ino` in Arduino IDE and set `wifiSsid`, `wifiPassword`, and the Render HTTPS `receiverUrl`. Wire both buttons between the GPIO pin and GND:
 
 
-The sketch uses the ESP32 internal pull-ups, sends one JSON `POST` per button press, and waits for the button to be released before sending another alert. The computer and ESP32 must be on the same Wi-Fi network, and Windows Firewall must allow TCP port 8000.
+The sketch uses the ESP32 internal pull-ups, sends one JSON `POST` on the press edge, and waits for both buttons to be released before sending another alert. A button held down at startup is ignored until it is released. The computer and ESP32 must be on the same Wi-Fi network, and Windows Firewall must allow TCP port 8000.
 
 ## Second ESP32 receiver
 

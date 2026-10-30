@@ -3,20 +3,21 @@
 #include <WiFiClientSecure.h>
 
 
-const char* wifiSsid = "Binsoi_Home";
-const char* wifiPassword = "VinceAdrien17!";
+const char* wifiSsid = "kylla";
+const char* wifiPassword = "kylla123";
 const char* statusUrl = "https://emergsystem.onrender.com/api/status";
 
 const int greenLedPin = 25;
 const int redLedPin = 26;
 const int buzzerPin = 27;
 const unsigned long pollInterval = 1000;
-const unsigned long blinkInterval = 500;
+const unsigned long blinkInterval = 100;
 
 unsigned long lastPoll = 0;
 unsigned long lastBlink = 0;
 bool blinkState = false;
 String activeAlert = "";
+volatile uint8_t activeAlertType = 0;
 
 void connectToWiFi() {
   WiFi.mode(WIFI_STA);
@@ -46,6 +47,7 @@ void setOutputs(bool greenOn, bool redOn, bool buzzerOn) {
 
 void stopAlert() {
   activeAlert = "";
+  activeAlertType = 0;
   blinkState = false;
   setOutputs(false, false, false);
 }
@@ -65,7 +67,8 @@ void pollAlertStatus() {
     return;
   }
 
-  WiFiClient client;
+  WiFiClientSecure client;
+  client.setInsecure();
   HTTPClient http;
   http.setTimeout(10000);
 
@@ -90,21 +93,30 @@ void pollAlertStatus() {
       stopAlert();
     } else if (traumaAlert) {
       activeAlert = "TRAUMA";
+      activeAlertType = 1;
       Serial.println("Trauma alert received");
     } else if (medicalAlert) {
       activeAlert = "MEDICAL";
+      activeAlertType = 2;
       Serial.println("Medical alert received");
     }
   } else {
     Serial.print("Status response: ");
     Serial.println(responseCode);
+    if (responseCode > 0) {
+      Serial.print("Server response: ");
+      Serial.println(http.getString());
+    } else {
+      Serial.print("HTTP error: ");
+      Serial.println(http.errorToString(responseCode));
+    }
   }
 
   http.end();
 }
 
 void updateOutputs() {
-  if (activeAlert.length() == 0) {
+  if (activeAlertType == 0) {
     setOutputs(false, false, false);
     return;
   }
@@ -115,10 +127,17 @@ void updateOutputs() {
     blinkState = !blinkState;
   }
 
-  if (activeAlert == "TRAUMA") {
+  if (activeAlertType == 1) {
     setOutputs(blinkState, false, blinkState);
-  } else if (activeAlert == "MEDICAL") {
+  } else if (activeAlertType == 2) {
     setOutputs(false, blinkState, blinkState);
+  }
+}
+
+void outputTask(void* parameter) {
+  while (true) {
+    updateOutputs();
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
@@ -128,6 +147,7 @@ void setup() {
   pinMode(redLedPin, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
   stopAlert();
+  xTaskCreatePinnedToCore(outputTask, "Alert outputs", 2048, nullptr, 1, nullptr, 0);
   connectToWiFi();
   Serial.println("ESP32 alert receiver ready");
 }
@@ -140,6 +160,5 @@ void loop() {
     pollAlertStatus();
   }
 
-  updateOutputs();
-  delay(10);
+  delay(1);
 }

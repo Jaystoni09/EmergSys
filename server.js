@@ -79,14 +79,25 @@ const server = http.createServer(async (request, response) => {
   try {
     if (request.method === 'POST' && requestPath === '/api/alert') {
       const payload = await readBody(request);
-      state.active = Boolean(payload.active);
-      state.severity = String(payload.severity || 'MILD');
-      state.room = String(payload.room || '--');
-      state.symptoms = String(payload.symptoms || '');
-      state.receivedAt = new Date().toLocaleTimeString('en-GB');
+      const incomingActive = Boolean(payload.active);
+      const incomingSeverity = String(payload.severity || 'MILD');
+      const incomingRoom = String(payload.room || '--');
+      const incomingSymptoms = String(payload.symptoms || '');
+      const alertKey = `${incomingRoom}|${incomingSeverity}|${incomingSymptoms}`;
+
+      // ESP32 clients may retry a POST. Do not turn a retry into a new alert
+      // or reset an operator decision that was already recorded.
+      if (incomingActive && alertKey === lastAlertKey) {
+        return json(response, 200, { ok: true, duplicate: true });
+      }
+
+      state.active = incomingActive;
+      state.severity = incomingSeverity;
+      state.room = incomingRoom;
+      state.symptoms = incomingSymptoms;
+      state.receivedAt = new Date().toISOString();
       state.response = 'PENDING';
-      const alertKey = `${state.room}|${state.severity}|${state.symptoms}`;
-      if (alertKey !== lastAlertKey || Date.now() - lastAlertAt >= 5000) {
+      if (incomingActive) {
         state.history.unshift({ receivedAt: state.receivedAt, room: state.room, severity: state.severity, symptoms: state.symptoms, response: 'PENDING' });
         state.history = state.history.slice(0, 20);
         lastAlertKey = alertKey;
@@ -102,6 +113,17 @@ const server = http.createServer(async (request, response) => {
         if (state.history[0]) state.history[0].response = state.response;
       }
       return json(response, 200, { ok: accepted, response: state.response });
+    }
+    if (request.method === 'POST' && requestPath === '/api/alert/clear') {
+      state.active = false;
+      state.severity = 'WAITING';
+      state.room = '--';
+      state.symptoms = 'No alert received';
+      state.receivedAt = '--';
+      state.response = 'PENDING';
+      lastAlertKey = '';
+      lastAlertAt = 0;
+      return json(response, 200, { ok: true });
     }
     if (request.method === 'POST' && requestPath === '/api/history/clear') {
       state.history = [];
